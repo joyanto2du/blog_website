@@ -1,5 +1,6 @@
 from django.shortcuts import get_object_or_404, render
 from .models import Blog, Category
+from django.db.models import Q
 
 # Create your views here.
 
@@ -24,3 +25,29 @@ def posts_by_category(request, category_id):
         'category': category,
     }
     return render(request, 'posts_by_category.html', context)
+
+
+def blogs(request, slug):
+    # Fetch the blog post with the given slug
+    single_blog = get_object_or_404(Blog, slug=slug, status='Publish')
+    
+    context = {
+        'single_blog': single_blog,
+    }
+    return render(request, 'blogs.html', context)
+
+
+def search(request):
+    query = request.GET.get('keyword', 'q')  # Get the search query from the request parameters
+    if query:
+       ## Search for blog posts that contain the query in their title or content
+       results = Blog.objects.filter(status='Published').filter(
+            Q(title__icontains=query) | Q(short_description__icontains=query)| Q(blog_body__icontains=query), status='Publish')
+    else:
+        results = Blog.objects.none()  # Return an empty queryset if no query is provided
+
+    context = {
+        'results': results,
+        'query': query,
+    } 
+    return render(request, 'search.html', context)
